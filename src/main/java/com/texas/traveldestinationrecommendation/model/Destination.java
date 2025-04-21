@@ -1,8 +1,11 @@
 package com.texas.traveldestinationrecommendation.model;
 
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
@@ -32,12 +35,15 @@ public class Destination {
     private String bestSeasonToVisit;
     private double averageRating;
     private int popularityScore;
-    private String recommendedFor;
+    @ElementCollection
+    private List<String> recommendedFor;
+    private LocalDateTime localDateTime;
 
     @ElementCollection
     private List<String> activityTags;
 
     @OneToMany(mappedBy = "destination", cascade = CascadeType.ALL)
     private List<DestinationRating> ratings = new ArrayList<>();
+
 
    }
