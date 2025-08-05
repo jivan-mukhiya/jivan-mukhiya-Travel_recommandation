@@ -1,7 +1,6 @@
 package com.texas.traveldestinationrecommendation.restcontroller;
 
 import com.texas.traveldestinationrecommendation.dto.DestinationRatingDto;
-import com.texas.traveldestinationrecommendation.model.DestinationRating;
 import com.texas.traveldestinationrecommendation.services.DestinationRatingServices;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -19,29 +18,42 @@ public class DestinationRatingRestController {
     private final DestinationRatingServices destinationRatingServices;
 
     @GetMapping("/list")
-    public ResponseEntity<List<DestinationRatingDto>> getAllDestinationRating() {
-
-        return new ResponseEntity<>(destinationRatingServices.getAllDestinationsRating(),
-                HttpStatus.OK);
+    public ResponseEntity<List<DestinationRatingDto>> getAllDestinationRatings() {
+        return ResponseEntity.ok(destinationRatingServices.getAllDestinationsRating());
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<DestinationRating> getDestinationRatingById(@PathVariable  Long id) {
-        return new ResponseEntity<>(destinationRatingServices.getDestinationRating(id),
-                HttpStatus.OK);
+    public ResponseEntity<DestinationRatingDto> getDestinationRatingById(@PathVariable Long id) {
+        return ResponseEntity.ok(destinationRatingServices.getDestinationRating(id));
     }
 
-
     @DeleteMapping("/delete/{id}")
-    public void deleteDestinationRatingById(@PathVariable Long id) {
+    public ResponseEntity<Void> deleteDestinationRatingById(@PathVariable Long id) {
         destinationRatingServices.deleteDestinationRating(id);
+        return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/add")
-    public ResponseEntity<DestinationRating> addDestinationRating(@RequestBody DestinationRating dseDestinationRating) {
-
-        return new ResponseEntity<>(destinationRatingServices.addDestination(dseDestinationRating)
-                ,HttpStatus.CREATED);
+    public ResponseEntity<DestinationRatingDto> addDestinationRating(
+            @RequestBody DestinationRatingDto destinationRatingDto) {
+        DestinationRatingDto createdRating = destinationRatingServices.addDestinationRating(destinationRatingDto);
+        return new ResponseEntity<>(createdRating, HttpStatus.CREATED);
     }
 
+    @PutMapping("/update/{id}")
+    public ResponseEntity<DestinationRatingDto> updateDestinationRating(
+            @PathVariable Long id,
+            @RequestBody DestinationRatingDto destinationRatingDto) {
+        destinationRatingDto.setId(id); // Ensure the ID from path is set
+        DestinationRatingDto updatedRating = destinationRatingServices.updateDestinationRating(destinationRatingDto);
+        return ResponseEntity.ok(updatedRating);
+    }
+
+
+    @GetMapping("/list/{id}")
+    public ResponseEntity<List<DestinationRatingDto>> getAllDestinationRatingsByDestinationId(@PathVariable Long id) {
+
+        return new ResponseEntity<>(destinationRatingServices.
+                getDestinationsRatingByDestinationId(id), HttpStatus.OK);
+    }
 }

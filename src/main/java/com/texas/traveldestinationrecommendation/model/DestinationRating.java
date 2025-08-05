@@ -34,5 +34,4 @@ public class DestinationRating {
     @JoinColumn(name = "destination_id")
     private Destination destination;
 
-    // Getters and setters
 }

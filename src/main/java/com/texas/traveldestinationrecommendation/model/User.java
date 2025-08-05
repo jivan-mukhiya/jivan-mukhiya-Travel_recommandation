@@ -1,8 +1,10 @@
 package com.texas.traveldestinationrecommendation.model;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -21,10 +23,10 @@ public class User {
 
     private String name;
     private String gender;
-    private int age;
+    private LocalDate dob;
     private String profession;
-    private double budgetMin;
-    private double budgetMax;
+    private Double budgetMin;
+    private Double budgetMax;
     private String travelTypePreference;
     private String seasonPreference;
 
@@ -34,9 +36,7 @@ public class User {
     @ElementCollection
     private List<String> preferences;
 
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
-    private List<DestinationRating> userRatings = new ArrayList<>();
-
     @OneToOne(cascade = CascadeType.ALL)
+    @JoinColumn(name="login_id")
     private UserLogin userLogin;
 }

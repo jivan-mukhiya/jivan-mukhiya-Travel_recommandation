@@ -2,6 +2,7 @@ package com.texas.traveldestinationrecommendation.dto;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.web.multipart.MultipartFile;
 
 
 import java.time.LocalDateTime;
@@ -23,4 +24,10 @@ public class DestinationDto {
     private LocalDateTime addedTime;
     private int popularityScore;
     private List<String> activityTags;
+    private String description;
+
+    private String imagePath;
+    private MultipartFile imageFile; // For receiving file uploads
+
+    
 }

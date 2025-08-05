@@ -7,6 +7,7 @@ import com.texas.traveldestinationrecommendation.services.DestinationServices;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -19,6 +20,8 @@ import java.util.stream.Collectors;
 public class DestinationServicesImpl implements DestinationServices {
 
     private final DestinationRepository destinationRepository;
+    private final ImageStorageService imageStorageService;
+    private final ActivityLogger activityLogger;
 
     @Override
     public List<DestinationDto> getAllDestinations() {
@@ -35,6 +38,9 @@ public class DestinationServicesImpl implements DestinationServices {
             destinationDto.setAddedTime(des.getLocalDateTime());
             destinationDto.setBestSeasonToVisit(des.getBestSeasonToVisit());
             destinationDto.setPopularityScore(des.getPopularityScore());
+            destinationDto.setDescription(des.getDescription());
+            destinationDto.setDestinationId(des.getDestinationId());
+                    destinationDto.setImagePath(des.getImagePath());
             return destinationDto;
         })
                 .sorted(Comparator.comparing(DestinationDto::getDestinationId).reversed()) // sort by ID in descending order
@@ -42,53 +48,107 @@ public class DestinationServicesImpl implements DestinationServices {
     }
 
     @Override
-    public Destination getDestination(Long id) {
+    public DestinationDto getDestination(Long id) {
 
-        return  destinationRepository.findById(id).orElseThrow(()->
+        Destination des=destinationRepository.findById(id).orElseThrow(()->
                 new IllegalArgumentException("Destination not found id:"+id));
+
+        return ConvertToDestinationDto(des);
     }
 
     @Override
-    public Destination addDestination(Destination destination) {
-        if(destinationRepository.findByName(destination.getName()) == null){
-            destination.setLocalDateTime(LocalDateTime.now());
-            destination.setPopularityScore(0);
-            destination.setAverageRating(0.0);
-            return destinationRepository.save(destination);
+    public DestinationDto addDestination(DestinationDto destinationDto) {
+        if(destinationRepository.findByName(destinationDto.getName()) != null){
+            throw new IllegalArgumentException("Destination already exists");
         }
-        throw new IllegalArgumentException("Destination already exists");
+
+        Destination destination = new Destination();
+        destination.setName(destinationDto.getName());
+        destination.setType(destinationDto.getType());
+        destination.setCostPerDay(destinationDto.getCostPerDay());
+        destination.setBestSeasonToVisit(destinationDto.getBestSeasonToVisit());
+        destination.setRecommendedFor(destinationDto.getRecommendedFor());
+        destination.setActivityTags(destinationDto.getActivityTags());
+        destination.setDescription(destinationDto.getDescription());
+
+        if(destinationDto.getImageFile() != null && !destinationDto.getImageFile().isEmpty()){
+            String imagePath = imageStorageService.storeImage(destinationDto.getImageFile());
+            destination.setImagePath(imagePath);
+        }
+
+        destination.setLocalDateTime(LocalDateTime.now());
+        destination.setPopularityScore(0);
+        destination.setAverageRating(0.0);
+
+        Destination savedDestination = destinationRepository.save(destination);
+        String currentUser="Admin";
+        activityLogger.logActivity(  "ADD_DESTINATION",
+                currentUser,
+                "Added destination: " + destination.getName());
+
+        return ConvertToDestinationDto(savedDestination);
     }
 
     @Override
     public void deleteDestination(Long id) {
-
-        destinationRepository.findById(id).ifPresentOrElse(destinationRepository ::delete,()->{
-            throw new IllegalArgumentException("Destination not found id:"+id);
+        destinationRepository.findById(id).ifPresent(destination -> {
+            if (destination.getImagePath() != null) {
+                try {
+                    imageStorageService.deleteImage(destination.getImagePath());
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+            destinationRepository.delete(destination);
+            String username = "Admin";
+            activityLogger.logActivity("DELETE_DESTINATION", username, destination.getName());
         });
 
     }
 
     @Override
-    public Destination updateDestination(Destination destination, Long id) {
+    public DestinationDto updateDestination(DestinationDto destinationDto, Long id) {
 
-        return destinationRepository.findById(id).map(des->{
 
-            des.setName(destination.getName());
-            des.setType(destination.getType());
-            des.setCostPerDay(destination.getCostPerDay());
-            des.setRecommendedFor(destination.getRecommendedFor());
-            des.setAverageRating(destination.getAverageRating());
-            des.setActivityTags(destination.getActivityTags());
-            des.setBestSeasonToVisit(destination.getBestSeasonToVisit());
-            des.setPopularityScore(destination.getPopularityScore());
-            return destinationRepository.save(des);
-        }).orElseThrow(()->
-                new IllegalArgumentException("Destination not found id:" + id));
+        return destinationRepository.findById(id).map(des -> {
+            String originalName = des.getName();
+
+            des.setName(destinationDto.getName());
+            des.setType(destinationDto.getType());
+            des.setCostPerDay(destinationDto.getCostPerDay());
+            des.setRecommendedFor(destinationDto.getRecommendedFor());
+            des.setAverageRating(destinationDto.getAverageRating());
+            des.setActivityTags(destinationDto.getActivityTags());
+            des.setBestSeasonToVisit(destinationDto.getBestSeasonToVisit());
+            des.setPopularityScore(destinationDto.getPopularityScore());
+            des.setDescription(destinationDto.getDescription());
+            if (destinationDto.getImageFile() != null && !destinationDto.getImageFile().isEmpty()) {
+                // Delete old image if exists
+                if (des.getImagePath() != null) {
+                    try {
+                        imageStorageService.deleteImage(des.getImagePath());
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+                // Store new image
+                String imagePath = imageStorageService.storeImage(destinationDto.getImageFile());
+                des.setImagePath(imagePath);
+            }
+
+            Destination updateDestination = destinationRepository.save(des);
+
+            String username = "Admin";
+            String details = originalName.equals(updateDestination.getName())
+                    ? originalName
+                    : originalName + " to " + updateDestination.getName();
+
+            activityLogger.logActivity("UPDATE_DESTINATION", username, details);
+
+            return ConvertToDestinationDto(updateDestination);
+        }).orElseThrow(() -> new IllegalArgumentException("Destination not found id: " + id));
     }
 
-
-
-    //convert to Destination on Dto
     private DestinationDto ConvertToDestinationDto(Destination destination) {
         DestinationDto destinationDto = new DestinationDto();
 
@@ -102,22 +162,28 @@ public class DestinationServicesImpl implements DestinationServices {
         destinationDto.setBestSeasonToVisit(destination.getBestSeasonToVisit());
         destinationDto.setAddedTime(destination.getLocalDateTime());
         destinationDto.setPopularityScore(destination.getPopularityScore());
+        destinationDto.setDescription(destination.getDescription());
+        destinationDto.setImagePath(destination.getImagePath());
         return destinationDto;
     }
 
 
-    //count By activityTags
+
     public Map<String,Long> getActivityTagStatistics(){
         return destinationRepository.countByActivityTags();
     }
 
-    //count by best season to visit
-    public Map<String, Long> countBySeason(){
 
-        List<Object[]> result=destinationRepository.countDestinationsBySeason();
-        Map<String,Long> seasonCount=new HashMap<>();
-        for(Object[] row:result){
-            seasonCount.put((String)row[0],(Long)row[1]);
+    public Map<String, Long> countBySeason() {
+        List<Object[]> result = destinationRepository.countDestinationsBySeason();
+        Map<String, Long> seasonCount = new HashMap<>();
+
+        for(Object[] row : result) {
+            String season = (String) row[0];
+            // Skip null keys
+            if(season != null) {
+                seasonCount.put(season, (Long) row[1]);
+            }
         }
         return seasonCount;
     }

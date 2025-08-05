@@ -1,19 +1,10 @@
 package com.texas.traveldestinationrecommendation.model;
 
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.fasterxml.jackson.annotation.JsonManagedReference;
-import jakarta.persistence.CascadeType;
-import jakarta.persistence.ElementCollection;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -35,6 +26,7 @@ public class Destination {
     private String bestSeasonToVisit;
     private double averageRating;
     private int popularityScore;
+    private String description;
     @ElementCollection
     private List<String> recommendedFor;
     private LocalDateTime localDateTime;
@@ -44,6 +36,8 @@ public class Destination {
 
     @OneToMany(mappedBy = "destination", cascade = CascadeType.ALL)
     private List<DestinationRating> ratings = new ArrayList<>();
+
+    private String imagePath;
 
 
    }

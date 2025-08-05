@@ -11,9 +11,10 @@ import lombok.NoArgsConstructor;
 public class DestinationRatingDto {
 
     private Long id;
-
+    private Long destinationId;
+    private String destinationName;
     private double rating;
     private String feedback;
+    private Long userId;
     private String userName;
-    private String destinationName;
 }

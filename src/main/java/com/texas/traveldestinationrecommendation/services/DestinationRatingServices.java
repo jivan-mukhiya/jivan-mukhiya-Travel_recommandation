@@ -9,7 +9,8 @@ public interface DestinationRatingServices {
 
     List<DestinationRatingDto> getAllDestinationsRating();
     void deleteDestinationRating(Long id);
-    DestinationRating getDestinationRating(Long id);
-    DestinationRating updateDestination(DestinationRating destinationRating);
-    DestinationRating addDestination(DestinationRating destinationRating);
+    DestinationRatingDto getDestinationRating(Long id);
+    DestinationRatingDto updateDestinationRating(DestinationRatingDto ratingDto);
+    DestinationRatingDto addDestinationRating(DestinationRatingDto ratingDto);
+    List<DestinationRatingDto> getDestinationsRatingByDestinationId(Long destinationId);
 }
