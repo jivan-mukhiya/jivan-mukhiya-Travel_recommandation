@@ -26,6 +26,7 @@ public class Destination {
     private String bestSeasonToVisit;
     private double averageRating;
     private int popularityScore;
+    @Column(columnDefinition = "TEXT")
     private String description;
     @ElementCollection
     private List<String> recommendedFor;
